@@ -41,9 +41,10 @@ class PowerBar(pygame.sprite.Sprite):
                 self.addition = 1
 
         if event.type == pygame.KEYUP:
-            if event.key == pygame.K_SPACE:
+            if event.key == pygame.K_SPACE and player.ready:
                 #Envia a força em que a barra estiver para o lançamento do projétil
                 player.launch(self.height * 2)
+                self.height = 1
 
 class Player(pygame.sprite.Sprite):
     def __init__(self):
@@ -73,53 +74,53 @@ class Player(pygame.sprite.Sprite):
         self.changeX = self.rect.x
         self.changeY = self.rect.y
 
+        #Determina se o jogador esta em contato com algo
+        self.contact = False
+
+        self.direction : bool
+
         #self.level = None
         self.walls = None
 
     def launch(self, Vo):
         self.Vo = Vo
-        print(self.Vo)
 
     def update(self):
 
         self.rect.x = self.changeX
         self.rect.y = self.changeY
 
-        self.eixoYA = self.rect.center
-        self.eixoYB = (self.rect.center[0], (self.rect.center[1] + -10))
-        self.eixoXA = self.rect.center
-        self.eixoXB = ((self.rect.center[0] + 10), (self.rect.center[1]))
-        self.angleLine = ((self.eixoXB[0], pygame.mouse.get_pos()[1]))
-        self.catetoOposto = (self.eixoXB, self.angleLine)
-        self.catetoAdjacente = (self.eixoXA, self.eixoXB)
-        self.hypotenusa =  (self.eixoXA, self.angleLine)
-        self.rect2 = pygame.draw.line(screen, BLACK, self.eixoYA, self.eixoYB, 1)
-        self.rect2 = pygame.draw.line(screen, BLACK, self.eixoXA, self.eixoXB, 1)
-        self.rect2 = pygame.draw.line(screen, BLACK, self.eixoXA, self.angleLine, 1)
-        self.rect2 = pygame.draw.line(screen, BLACK, self.eixoXB, self.angleLine, 1)
-        distanciaCatOp = self.calcularDDP(self.catetoOposto[0], self.catetoOposto[1])
-        distanciaCatAd = self.calcularDDP(self.catetoAdjacente[0], self.catetoAdjacente[1])
-        distanciaHy = self.calcularDDP(self.hypotenusa[0], self.hypotenusa[1])
-
-        sinn = distanciaCatOp / distanciaHy
-        coss = distanciaCatAd / distanciaHy
+        results = self.contructAngle()
+        sinn = results[0]
+        coss = results[1]
 
         if event.type == pygame.KEYUP:
             if event.key == pygame.K_SPACE and self.ready:
+                self.contact = False
+                self.ready = False
                 self.sin = sinn
                 self.cos = coss
                 self.Voy = 10
                 self.teste = 1
-                self.ready = False
+                self.direction = (results[2], results[3])
 
-        vX = self.cos * self.Vo
-        vY = self.sin * self.Vo
+        if not self.ready:
 
-        self.changeX = self.Xo + (vX * self.t)
-        self.changeY = (self.Yo) -(vY * self.t) + (self.teste * (9.8 * (self.t ** 2)) / 2)
+            if self.direction[0]:
+                vX = (self.cos * self.Vo)
+            else:
+                vX = -(self.cos * self.Vo)
 
-        if self.teste == 1 :
-            self.t += 0.1
+            if self.direction[1]:
+                vY = (self.sin * self.Vo)
+            else:
+                vY = -(self.sin * self.Vo)
+
+            self.changeX = self.Xo + (vX * self.t)
+            self.changeY = (self.Yo) -(vY * self.t) + (self.teste * (9.8 * (self.t ** 2)) / 2)
+
+            if self.teste == 1 :
+                self.t += 0.1
 
             #Colisão
 
@@ -128,8 +129,30 @@ class Player(pygame.sprite.Sprite):
             # If we are moving right, set our right side to the left side of
             # the item we hit
             if self.changeX > 0:
-                self.rect.right = block.rect.left
-                print("passou")
+                print(self.rect.midtop[1], block.rect.midtop[1], self.rect.midright[0],block.rect.midright[0], self.rect.midleft[0] ,  block.rect.midleft[0])
+                if self.rect.midtop[1] < block.rect.midtop[1] and self.rect.midright[0] < block.rect.midright[0] and self.rect.midleft[0] > block.rect.midleft[0]:
+                    self.changeY = (block.rect.y - 10)
+                    print(1)
+                elif  self.rect.midtop[1] > block.rect.midtop[1] and self.rect.midright[0] < block.rect.midright[0] and self.rect.midleft[0] < block.rect.midleft[0]:
+                    self.changeX = (block.rect.x - 10)
+                    print(2)
+                elif  self.rect.midtop[1] > block.rect.midtop[1] and self.rect.midright[0] > block.rect.midright[0] and self.rect.midleft[0] > block.rect.midleft[0]:
+                    self.changeX = (block.rect.x + 10)
+                    print(3)
+                elif  self.rect.midtop[1] > block.rect.midtop[1] and self.rect.midright[0] < block.rect.midright[0] and self.rect.midleft[0] > block.rect.midleft[0]:
+                    self.changeY = (block.rect.y + 10)
+                    print(4)
+
+                self.Xo = self.changeX
+                self.Yo = self.changeY
+                self.t = 0
+                self.sin = 0
+                self.cos = 0
+                self.Voy = 0
+                self.teste = 0
+
+                self.ready = True
+
             else:
                 # Otherwise if we are moving left, do the opposite.
                 self.rect.left = block.rect.right
@@ -149,6 +172,37 @@ class Player(pygame.sprite.Sprite):
     def calcularDDP(self, pontoA, pontoB):
         distancia = (((pontoB[0] - pontoA[0]) ** 2 + (pontoB[1] - pontoA[1]) ** 2) ** 1/2)
         return distancia
+
+    def contructAngle(self):
+
+        self.eixoYA = self.rect.center
+        self.eixoYB = (self.rect.center[0], (self.rect.center[1]))
+        self.eixoXA = self.rect.center
+        self.eixoXB = ((pygame.mouse.get_pos()[0]), (self.rect.center[1]))
+        self.angleLine = ((self.eixoXB[0], pygame.mouse.get_pos()[1]))
+        self.catetoOposto = (self.eixoXB, self.angleLine)
+        self.catetoAdjacente = (self.eixoXA, self.eixoXB)
+        self.hypotenusa = (self.eixoXA, self.angleLine)
+        self.rect2 = pygame.draw.line(screen, BLACK, self.eixoYA, self.eixoYB, 1)
+        self.rect2 = pygame.draw.line(screen, BLACK, self.eixoXA, self.eixoXB, 1)
+        self.rect2 = pygame.draw.line(screen, BLACK, self.eixoXA, self.angleLine, 1)
+        self.rect2 = pygame.draw.line(screen, BLACK, self.eixoXB, self.angleLine, 1)
+        distanciaCatOp = self.calcularDDP(self.catetoOposto[0], self.catetoOposto[1])
+        distanciaCatAd = self.calcularDDP(self.catetoAdjacente[0], self.catetoAdjacente[1])
+        distanciaHy = self.calcularDDP(self.hypotenusa[0], self.hypotenusa[1])
+
+        directionX = True
+        directionY = True
+
+        if self.eixoXB[0] < self.rect.center[0]:
+            directionX = False
+
+        if self.angleLine[1] > self.rect.center[1]:
+            directionY = False
+
+        results =  ( distanciaCatOp / distanciaHy, distanciaCatAd / distanciaHy, directionX, directionY)
+
+        return results
 
 class Wall(pygame.sprite.Sprite):
     def __init__(self, x, y, width, height):
@@ -228,6 +282,10 @@ wallsList.add(wall)
 allSprites.add(wall)
 
 wall = Wall(0, 590, 1000, 10)
+wallsList.add(wall)
+allSprites.add(wall)
+
+wall = Wall(300, 300, 50, 100)
 wallsList.add(wall)
 allSprites.add(wall)
 
