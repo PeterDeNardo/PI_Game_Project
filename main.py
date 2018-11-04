@@ -228,24 +228,24 @@ class Enemy(pygame.sprite.Sprite):
         self.go = True
 
     def update(self, *args):
-        if not self.rect.x == self.finalX and self.go:
+        if not (self.rect.x == self.finalX and self.rect.y == self.finalY) and self.go:
             if self.finalX > self.inicialX:
                 self.rect.x += 1
-            else:
+            elif self.finalX < self.inicialX:
                 self.rect.x -= 1
             if self.finalY > self.inicialY:
                 self.rect.y += 1
-            else:
+            elif self.finalY < self.inicialY:
                 self.rect.y -= 1
-        elif self.rect.x == self.finalX or not self.go:
+        elif (self.rect.x == self.finalX and self.rect.y == self.finalY) or not self.go:
             self.go = False
             if self.finalX > self.inicialX:
                 self.rect.x -= 1
-            else:
+            elif self.finalX < self.inicialX:
                 self.rect.x += 1
             if self.finalY > self.inicialY:
                 self.rect.y -= 1
-            else:
+            elif self.finalY < self.inicialY:
                 self.rect.y += 1
             if self.rect.x == self.inicialX and self.rect.y == self.inicialY:
                 self.go = True
@@ -338,7 +338,7 @@ wall = Wall(300, 300, 50, 100)
 wallsList.add(wall)
 allSprites.add(wall)
 
-enemy = Enemy(500, 500, 50, 50, 600, 400)
+enemy = Enemy(500, 500, 50, 50, 500, 600)
 enemyList.add(enemy)
 allSprites.add(enemy)
 
