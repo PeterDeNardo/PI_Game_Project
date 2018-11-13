@@ -117,7 +117,7 @@ class Player(pygame.sprite.Sprite):
         coss = results[1]
 
         if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_LSHIFT and self.ready:
+            if event.key == pygame.K_KP_ENTER and self.ready:
                 self.contact = False
                 self.ready = False
                 self.sin = sinn
@@ -128,7 +128,7 @@ class Player(pygame.sprite.Sprite):
                 self.launch(powerBar.height * 2)
 
         if event.type == pygame.KEYDOWN and self.portal_stage is not '':
-            if event.key == pygame.K_a:
+            if event.key == pygame.K_KP0:
                 print('apertei')
                 print('portal_stage eh ', player.portal_stage)
                 self.portal_state = True
@@ -194,24 +194,42 @@ class Player(pygame.sprite.Sprite):
                     self.changeY = (portal.rect.y - self.rect.height)
                     if portal.color == BLUE:
                         self.portal_stage = 'BLUE'
+                    if portal.color == PINK:
+                        self.portal_stage = 'PINK'
+                    if portal.color == PURPLE:
+                        self.portal_stage = 'PURPLE'
+
 
                 elif self.rect.midtop[1] > portal.rect.midtop[1] and self.rect.midright[0] < portal.rect.midright[0] and \
                         self.rect.midleft[0] < portal.rect.midleft[0]:
                     self.changeX = (portal.rect.x - self.rect.width)
                     if portal.color == BLUE:
                         self.portal_stage = 'BLUE'
+                    if portal.color == PINK:
+                        self.portal_stage = 'PINK'
+                    if portal.color == PURPLE:
+                        self.portal_stage = 'PURPLE'
+
 
                 elif self.rect.midtop[1] > portal.rect.midtop[1] and self.rect.midright[0] > portal.rect.midright[0] and \
                         self.rect.midleft[0] > portal.rect.midleft[0]:
                     self.changeX = (portal.rect.x + portal.width)
                     if portal.color == BLUE:
                         self.portal_stage = 'BLUE'
+                    if portal.color == PINK:
+                        self.portal_stage = 'PINK'
+                    if portal.color == PURPLE:
+                        self.portal_stage = 'PURPLE'
 
                 elif self.rect.midtop[1] > portal.rect.midtop[1] and self.rect.midright[0] < portal.rect.midright[0] and \
                         self.rect.midleft[0] > portal.rect.midleft[0]:
                     self.changeY = (portal.rect.y + portal.height)
                     if portal.color == BLUE:
                         self.portal_stage = 'BLUE'
+                    if portal.color == PINK:
+                        self.portal_stage = 'PINK'
+                    if portal.color == PURPLE:
+                        self.portal_stage = 'PURPLE'
 
                 self.Xo = self.changeX
                 self.Yo = self.changeY
@@ -439,7 +457,7 @@ class Level_01(Level):
 
         walls = [[10, 600, 0, 0], [1000, 10, 0, 0], [1000, 10, 0, 590], [50, 100, 300, 300], [10, 600, 990, 0]]
 
-        portals = [[50, 50, 700, 500, BLUE]]
+        portals = [[50, 50, 700, 500, PURPLE]]
 
         enemies = [[50, 50, 500, 500, 500, 600], [50, 50, 400, 400, 400, 500]]
 
@@ -484,7 +502,7 @@ class Level_02(Level):
 
         walls = [[10, 600, 0, 0], [1000, 10, 0, 0], [1000, 10, 0, 590], [50, 100, 300, 300], [10, 600, 990, 0], [40,300, 200, 30]]
 
-        portals = [[50, 50, 700, 200, BLUE]]
+        portals = [[50, 50, 700, 200, PURPLE]]
 
         enemies = [[50, 50, 500, 500, 500, 600], [50, 50, 400, 400, 400, 500]]
 
@@ -584,10 +602,6 @@ class Portal(pygame.sprite.Sprite):
         self.width = width
         self.color = color
 
-
-    def update(self):
-        print(5555)
-
 pygame.init()
 pygame.mixer.init()
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
@@ -640,12 +654,47 @@ while running:
     current_level.update()
 
     if player.portal_stage == 'BLUE' and player.portal_state is True:
-        player.resetPlayerPosition((50), HEIGHT/2)
+        player.rect.x = 50
+        player.rect.y = HEIGHT / 2
+        player.changeX = player.rect.x
+        player.changeY = player.rect.y
+        player.resetPlayerPosition((50), HEIGHT / 2)
+
+
         current_level_no = 1
         current_level = level_list[current_level_no]
         player.level = current_level
 
+        player.portal_stage = ''
+        player.portal_state = False
 
+    if player.portal_stage == 'PINK' and player.portal_state is True:
+        player.rect.x = 50
+        player.rect.y = HEIGHT / 2
+        player.changeX = player.rect.x
+        player.changeY = player.rect.y
+        player.resetPlayerPosition((50), HEIGHT / 2)
+
+        current_level_no = 2
+        current_level = level_list[current_level_no]
+        player.level = current_level
+
+        player.portal_stage = ''
+        player.portal_state = False
+
+    if player.portal_stage == 'PURPLE' and player.portal_state is True:
+        player.rect.x = 50
+        player.rect.y = HEIGHT / 2
+        player.changeX = player.rect.x
+        player.changeY = player.rect.y
+        player.resetPlayerPosition((50), HEIGHT / 2)
+
+        current_level_no = 0
+        current_level = level_list[current_level_no]
+        player.level = current_level
+
+        player.portal_stage = ''
+        player.portal_state = False
 
     # Draw / render
     current_level.draw(screen)
