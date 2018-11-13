@@ -117,7 +117,7 @@ class Player(pygame.sprite.Sprite):
         coss = results[1]
 
         if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_KP_ENTER and self.ready:
+            if event.key == pygame.K_LSHIFT and self.ready:
                 self.contact = False
                 self.ready = False
                 self.sin = sinn
@@ -128,7 +128,7 @@ class Player(pygame.sprite.Sprite):
                 self.launch(powerBar.height * 2)
 
         if event.type == pygame.KEYDOWN and self.portal_stage is not '':
-            if event.key == pygame.K_KP0:
+            if event.key == pygame.K_a:
                 print('apertei')
                 print('portal_stage eh ', player.portal_stage)
                 self.portal_state = True
@@ -360,6 +360,7 @@ class Level(object):
         self.chance_list.update()
         self.player.update()
         self.powerBar.update()
+        self.portal_list.update()
 
     def draw(self, screen):
         """ Draw everything on this level. """
@@ -462,6 +463,51 @@ class Level_01(Level):
         for portal in portals:
             portalz = Portal(portal[0], portal[1], portal[2], portal[3], portal[4])
             portalz.player = self.player
+            portalz.exit = Level_02
+            self.portal_list.add(portalz)
+
+        for enemy in enemies:
+            enemiez = Enemy(enemy[0], enemy[1], enemy[2], enemy[3], enemy[4], enemy[5])
+            enemiez.player = self.player
+            self.enemy_list.add(enemiez)
+
+class Level_02(Level):
+    """ Definition for level 1. """
+
+    def __init__(self, player):
+        """ Create level 1. """
+
+        # Call the parent constructor
+        Level.__init__(self, player)
+
+        # self.level_limit = -1500
+
+        walls = [[10, 600, 0, 0], [1000, 10, 0, 0], [1000, 10, 0, 590], [50, 100, 300, 300], [10, 600, 990, 0], [40,300, 200, 30]]
+
+        portals = [[50, 50, 700, 200, BLUE]]
+
+        enemies = [[50, 50, 500, 500, 500, 600], [50, 50, 400, 400, 400, 500]]
+
+        moedas = [[250, 200], [350, 100], [450, 300]]
+
+        self.player.add(player)
+        self.powerBar.add(powerBar)
+
+        for coin in moedas:
+            moeda = Coin(32, 32)
+            moeda.rect.x = coin[0]
+            moeda.rect.y = coin[1]
+            moeda.player = self.player
+            self.coin_list.add(moeda)
+
+        for wall in walls:
+            wallz = Wall(wall[0], wall[1], wall[2], wall[3])
+            wallz.player = self.player
+            self.wall_list.add(wallz)
+
+        for portal in portals:
+            portalz = Portal(portal[0], portal[1], portal[2], portal[3], portal[4])
+            portalz.player = self.player
             self.portal_list.add(portalz)
 
         for enemy in enemies:
@@ -539,6 +585,9 @@ class Portal(pygame.sprite.Sprite):
         self.color = color
 
 
+    def update(self):
+        print(5555)
+
 pygame.init()
 pygame.mixer.init()
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
@@ -559,6 +608,7 @@ allSprites = pygame.sprite.Group()
 level_list = []
 level_list.append(Level_World_Map(player))
 level_list.append(Level_01(player))
+level_list.append(Level_02(player))
 
 current_level_no = 0
 current_level = level_list[current_level_no]
@@ -594,6 +644,8 @@ while running:
         current_level_no = 1
         current_level = level_list[current_level_no]
         player.level = current_level
+
+
 
     # Draw / render
     current_level.draw(screen)
