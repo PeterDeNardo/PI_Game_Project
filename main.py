@@ -44,6 +44,7 @@ class PowerBar(pygame.sprite.Sprite):
             if self.height >= 80:
                 self.image.fill(RED)
 
+
 class Player(pygame.sprite.Sprite):
     def __init__(self):
         pygame.sprite.Sprite.__init__(self)
@@ -107,19 +108,16 @@ class Player(pygame.sprite.Sprite):
         # Trata vida
         chances_hit_list = pygame.sprite.spritecollide(self, self.level.chance_list, True)
 
-        # Vida
-        for chances in chances_hit_list:
-            if self.chances < 3:
-                self.chances += 1
-
         results = self.contructAngle()
         sinn = results[0]
         coss = results[1]
 
         if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_KP_ENTER and self.ready:
+            if event.key == pygame.K_RETURN and self.ready:
                 self.contact = False
                 self.ready = False
+                self.portal_state = False
+                self.portal_stage = ''
                 self.sin = sinn
                 self.cos = coss
                 self.Voy = 10
@@ -128,7 +126,7 @@ class Player(pygame.sprite.Sprite):
                 self.launch(powerBar.height * 2)
 
         if event.type == pygame.KEYDOWN and self.portal_stage is not '':
-            if event.key == pygame.K_KP0:
+            if event.key == pygame.K_0:
                 print('apertei')
                 print('portal_stage eh ', player.portal_stage)
                 self.portal_state = True
@@ -177,7 +175,6 @@ class Player(pygame.sprite.Sprite):
                 elif self.rect.midtop[1] > wall.rect.midtop[1] and self.rect.midright[0] < wall.rect.midright[0] and \
                         self.rect.midleft[0] > wall.rect.midleft[0]:
                     self.changeY = (wall.rect.y + wall.height)
-
 
                 self.resetPlayerPosition(self.changeX, self.changeY)
 
@@ -241,6 +238,9 @@ class Player(pygame.sprite.Sprite):
                 self.ready = True
 
         for enemy in enemyCollisionList:
+            # Vida
+
+            chances_hit_list = pygame.sprite.spritecollide(self, self.level.chance_list, True)
             print("GameOver")
             self.t = 0
             self.ready = True
@@ -319,6 +319,7 @@ class Coin(pygame.sprite.Sprite):
         # of rect.x and rect.y
         self.rect = self.image.get_rect()
 
+
 # Chances
 class Chances(pygame.sprite.Sprite):
     player = None
@@ -351,24 +352,12 @@ class Level(object):
         self.player = pygame.sprite.Group()
         self.powerBar = pygame.sprite.Group()
 
-        chances = []
-        chances.append([30, 30])
-        chances.append([50, 30])
-        chances.append([70, 30])
-
         # Background image
         self.background = None
 
         # How far this world has been scrolled left/right
         # self.world_shift = 0
         # self.level_limit = -1000
-
-        for chance in chances:
-            chancez = Chances(15, 15)
-            chancez.rect.x = chance[0]
-            chancez.rect.y = chance[1]
-            chancez.player = self.player
-            self.chance_list.add(chancez)
 
     # Update everythign on this level
     def update(self):
@@ -414,6 +403,44 @@ class Level(object):
     #     for monstro in self.monstro_list:
     #         monstro.rect.x += shift_x
 
+class Level_Tutorial(Level):
+    """ Definition for level 1. """
+
+    def __init__(self, player):
+        """ Create level 1. """
+
+        # Call the parent constructor
+        Level.__init__(self, player)
+        # self.level_limit = -1500
+
+        walls = [[10, 600, 0, 0], [1000, 10, 0, 0], [1000, 10, 0, 590], [50, 100, 470, 240], [10, 600, 990, 0]]
+
+        moedas = [[250, 200], [350, 100], [450, 500]]
+
+        # largura, altura, posicao a direita, posicao cima/baixo (quanto menor mais acima)
+        self.portals = []
+        portals = [[50, 50, 650, 350, PURPLE]]
+        self.portals = portals
+        self.player.add(player)
+        self.powerBar.add(powerBar)
+
+        for wall in walls:
+            wallz = Wall(wall[0], wall[1], wall[2], wall[3])
+            wallz.player = self.player
+            self.wall_list.add(wallz)
+
+        for portal in portals:
+            portalz = Portal(portal[0], portal[1], portal[2], portal[3], portal[4])
+            portalz.player = self.player
+            self.portal_list.add(portalz)
+
+        for coin in moedas:
+            moeda = Coin(32, 32)
+            moeda.rect.x = coin[0]
+            moeda.rect.y = coin[1]
+            moeda.player = self.player
+            self.coin_list.add(moeda)
+
 class Level_World_Map(Level):
     """ Definition for level 1. """
 
@@ -428,7 +455,8 @@ class Level_World_Map(Level):
 
         # largura, altura, posicao a direita, posicao cima/baixo (quanto menor mais acima)
         self.portals = []
-        portals = [50, 50, 270, 150, BLUE], [50, 50, 270, 350, PINK], [50, 50, 650, 150, YELLOW], [50, 50, 650, 350, RED]
+        portals = [50, 50, 270, 150, BLUE], [50, 50, 270, 350, PINK], [50, 50, 650, 150, YELLOW], [50, 50, 650, 350,
+                                                                                                   RED]
         self.portals = portals
         self.player.add(player)
         self.powerBar.add(powerBar)
@@ -442,6 +470,7 @@ class Level_World_Map(Level):
             portalz = Portal(portal[0], portal[1], portal[2], portal[3], portal[4])
             portalz.player = self.player
             self.portal_list.add(portalz)
+
 
 # Create platforms for the level
 class Level_01(Level):
@@ -462,6 +491,13 @@ class Level_01(Level):
         enemies = [[50, 50, 500, 500, 500, 600], [50, 50, 400, 400, 400, 500]]
 
         moedas = [[250, 200], [350, 100], [450, 300]]
+
+
+
+        self.chances = []
+        self.chances.append([30, 30])
+        self.chances.append([50, 30])
+        self.chances.append([70, 30])
 
         self.player.add(player)
         self.powerBar.add(powerBar)
@@ -489,6 +525,17 @@ class Level_01(Level):
             enemiez.player = self.player
             self.enemy_list.add(enemiez)
 
+        for chance in self.chances:
+            chancez = Chances(15, 15)
+            chancez.rect.x = chance[0]
+            chancez.rect.y = chance[1]
+            chancez.player = self.player
+            self.chance_list.add(chancez)
+
+    def popChances(self):
+
+        self.chances.pop(2)
+
 class Level_02(Level):
     """ Definition for level 1. """
 
@@ -500,7 +547,8 @@ class Level_02(Level):
 
         # self.level_limit = -1500
 
-        walls = [[10, 600, 0, 0], [1000, 10, 0, 0], [1000, 10, 0, 590], [50, 100, 300, 300], [10, 600, 990, 0], [40,300, 200, 30]]
+        walls = [[10, 600, 0, 0], [1000, 10, 0, 0], [1000, 10, 0, 590], [50, 100, 300, 300], [10, 600, 990, 0],
+                 [40, 300, 200, 30]]
 
         portals = [[50, 50, 700, 200, PURPLE]]
 
@@ -533,6 +581,7 @@ class Level_02(Level):
             enemiez.player = self.player
             self.enemy_list.add(enemiez)
 
+
 class Wall(pygame.sprite.Sprite):
 
     def __init__(self, width, height, x, y):
@@ -546,6 +595,7 @@ class Wall(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.x = x
         self.rect.y = y
+
 
 class Enemy(pygame.sprite.Sprite):
     def __init__(self, width, height, x, y, finalX, finalY):
@@ -589,6 +639,7 @@ class Enemy(pygame.sprite.Sprite):
             if self.rect.x == self.inicialX and self.rect.y == self.inicialY:
                 self.go = True
 
+
 class Portal(pygame.sprite.Sprite):
     def __init__(self, width, height, x, y, color):
         pygame.sprite.Sprite.__init__(self)
@@ -602,12 +653,12 @@ class Portal(pygame.sprite.Sprite):
         self.width = width
         self.color = color
 
+
 pygame.init()
 pygame.mixer.init()
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("My Game")
 clock = pygame.time.Clock()
-
 
 player = Player()
 powerBar = PowerBar()
@@ -620,6 +671,7 @@ allSprites = pygame.sprite.Group()
 # portalList = pygame.sprite.Group()
 
 level_list = []
+level_list.append(Level_Tutorial(player))
 level_list.append(Level_World_Map(player))
 level_list.append(Level_01(player))
 level_list.append(Level_02(player))
@@ -635,9 +687,11 @@ player.level = current_level
 
 allSprites.add(powerBar)
 
+font = pygame.font.Font(None, 28)
+
 allSprites.add(player)
 
-# Game loop
+# Game loop                     
 running = True
 while running:
     # keep loop running at the right speed
@@ -659,7 +713,6 @@ while running:
         player.changeX = player.rect.x
         player.changeY = player.rect.y
         player.resetPlayerPosition((50), HEIGHT / 2)
-
 
         current_level_no = 1
         current_level = level_list[current_level_no]
@@ -689,12 +742,39 @@ while running:
         player.changeY = player.rect.y
         player.resetPlayerPosition((50), HEIGHT / 2)
 
-        current_level_no = 0
+        current_level_no = 1
         current_level = level_list[current_level_no]
         player.level = current_level
 
         player.portal_stage = ''
         player.portal_state = False
+
+    if current_level_no == 0:
+        if player.ready is True:
+            textos = [["Hi, Welcome to Stick and Go!", [267, 130]], 
+                      ["Try to put your mouse curso on top of this Coin", [367, 230]],
+                      ["{0}".format(powerBar.height), [25, 450]]
+                     ]
+            for texts in textos:
+                texto = font.render(texts[0], True, BLACK) 
+                screen.blit(texto, texts[1])
+            
+    if current_level_no == 1:
+        if player.portal_stage == 'BLUE':
+            texto = font.render("BLUE", True, BLACK)
+            screen.blit(texto, [267, 130])
+    #     if player.portal_stage == 'PINK':
+    #         texto = font.render("PINK", True, BLACK)
+    #         screen.blit(texto, [300, 300])
+    #     if player.portal_stage == 'YELLOW':
+    #         texto = font.render("PINK", True, BLUE)
+    #         screen.blit(texto, [300, 300])
+    #     if player.portal_stage == 'RED':
+    #         texto = font.render("RED", True, YELLOW)
+    #         screen.blit(texto, [300, 300])
+    #     if player.portal_stage == '':
+    #         texto = None
+    #         screen.blit(texto, [0, 0])
 
     # Draw / render
     current_level.draw(screen)
