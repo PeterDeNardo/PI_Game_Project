@@ -461,6 +461,8 @@ class Level_Menu(Level):
         # Call the parent constructor
         Level.__init__(self, player)
 
+        self.color = WHITE
+
         walls = [[20, 600, 0, 0], [1000, 20, 0, 0], [1000, 20, 0, 580], [20, 600, 980, 0]]
 
         self.type = "menu"
@@ -535,6 +537,8 @@ class Level_Tutorial(Level):
         # Call the parent constructor
         Level.__init__(self, player)
 
+        self.color = WHITE
+
         walls = [
                 [20, 600, 0, 0], 
                 [1000, 20, 0, 0], 
@@ -588,6 +592,8 @@ class Level_World_Map(Level):
         Level.__init__(self, player)
         # self.level_limit = -1500
 
+        self.color = WHITE
+
         walls = [
                 [40, 600, 0, 0], 
                 [1000, 30, 0, 0], 
@@ -624,6 +630,8 @@ class Level_01(Level):
 
         # self.level_limit = -1500
 
+        self.color = BLUE
+
         walls = [
                 [40, 600, 0, 0], # paredes de contencao
                 [1000, 30, 0, 0], # paredes de contencao
@@ -637,7 +645,7 @@ class Level_01(Level):
         portals = [[50, 50, 900, 125, PURPLE]]
 
         enemies = [
-                  [50, 50, 500, 500, 500, 600, BROWN], 
+                  [50, 50, 260, 260, 260, 500, BROWN], 
                   [50, 50, 400, 400, 400, 500, BROWN]
                   ]
 
@@ -668,6 +676,8 @@ class Level_02(Level):
 
         # Call the parent constructor
         Level.__init__(self, player)
+
+        self.color = PINK
 
         # self.level_limit = -1500
 
@@ -716,6 +726,8 @@ class Level_03(Level):
         Level.__init__(self, player)
 
         # self.level_limit = -1500
+
+        self.color = YELLOW
 
         walls = [
                 [40, 600, 0, 0], # paredes de contencao
@@ -876,12 +888,13 @@ while running:
         # check for closing window
         if event.type == pygame.QUIT:
             running = False
-
-    screen.fill(WHITE)
+    
+    screen.fill(player.level.color)
 
     # update
     current_level.draw(screen)
     current_level.update()
+
     if player.portal_stage == 'BLUE' and player.portal_state is True:
         player.rect.x = 50
         player.rect.y = HEIGHT / 2
