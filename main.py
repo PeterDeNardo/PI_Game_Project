@@ -1,7 +1,6 @@
 # Pygame template - skeleton for a new pygame project
 from help import *
-import random
-import math
+
 
 # Power bar Class
 class PowerBar(pygame.sprite.Sprite):
@@ -71,6 +70,10 @@ class Player(pygame.sprite.Sprite):
         self.teste = 0
         self.t = 0
 
+        self.collideSound = pygame.mixer.Sound("poin.wav")
+        self.portedSound = pygame.mixer.Sound("rururu.wav")
+        self.dieSound = pygame.mixer.Sound("plush.wav")
+
         self.powerBar = PowerBar()
 
         self.changeX = self.rect.x
@@ -83,6 +86,7 @@ class Player(pygame.sprite.Sprite):
 
         # List of sprites we can bump against
         self.level = None
+        self.level_no = 4
 
         # HP - Chances
         self.chances = 3
@@ -91,7 +95,7 @@ class Player(pygame.sprite.Sprite):
         self.score = 0
 
     def launch(self, Vo):
-        self.Vo = Vo/2
+        self.Vo = Vo / 2
 
     def update(self):
 
@@ -126,8 +130,6 @@ class Player(pygame.sprite.Sprite):
 
         if event.type == pygame.KEYDOWN and self.portal_stage is not '':
             if event.key == pygame.K_0:
-                print('apertei')
-                print('portal_stage eh ', player.portal_stage)
                 self.portal_state = True
 
         if not self.ready:
@@ -177,13 +179,10 @@ class Player(pygame.sprite.Sprite):
                         self.rect.midleft[0] > wall.rect.midleft[0]:
                     self.changeY = (wall.rect.y + wall.height)
 
+                self.collideSoundAction()
                 self.resetPlayerPosition(self.changeX, self.changeY)
 
         for portal in portalCollisionList:
-            # If we are moving right, set our right side to the left side of
-            # the item we hit
-
-            print("Nextlevel")
 
             if not self.ready:
 
@@ -245,6 +244,8 @@ class Player(pygame.sprite.Sprite):
                 self.teste = 0
                 self.ready = True
 
+                self.teleportedSoundAction()
+
         for enemy in enemyCollisionList:
             # Vida
 
@@ -256,6 +257,27 @@ class Player(pygame.sprite.Sprite):
             self.Xo = self.changeX
             self.Yo = self.changeY
             self.chances -= 1
+
+            if self.chances == 0:
+                global current_level_no
+                global current_level
+                current_level_no = 2
+                current_level = level_list[current_level_no]
+                self.resetPlayerStatus()
+
+            self.dieSoundAction()
+
+
+
+    def collideSoundAction(self):
+        pygame.mixer.Sound.play(self.collideSound)
+
+    def teleportedSoundAction(self):
+        pygame.mixer.Sound.play(self.portedSound)
+
+    def dieSoundAction(self):
+        pygame.mixer.Sound.play(self.dieSound)
+
 
     def resetPlayerPosition(self, positionX, positionY):
 
@@ -383,16 +405,26 @@ class Level(object):
         self.player.update()
         self.powerBar.update()
         self.portal_list.update()
-        if player.ready is True:
-            for texts in self.texts_list:
-                texto = font.render(texts[0], True, BLACK)
-                screen.blit(texto, texts[1])
+
+        global current_level_no
+        global current_level
+
+
+        for texts in self.texts_list:
+            texto = font.render(texts[0], True, BLACK)
+            screen.blit(texto, texts[1])
+
+        if current_level_no == 1 :
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    current_level_no = 0
+                    current_level = level_list[current_level_no]
 
         if self.type == "normalLevel":
             hud_texts_list = [["{0}".format(powerBar.height), [2, 380]],
-                               ["{0}".format(player.score), [500, 5]],
-                               ["{0}".format(player.chances), [60, 5]]
-                               ]
+                              ["{0}".format(player.score), [500, 5]],
+                              ["{0}".format(player.chances), [60, 5]]
+                              ]
             for texts in hud_texts_list:
                 texto = font.render(texts[0], True, WHITE)
                 screen.blit(texto, texts[1])
@@ -406,6 +438,24 @@ class Level(object):
                 chancez.rect.y = chance[1]
                 chancez.player = self.player
                 self.chance_list.add(chancez)
+
+            if event.type == pygame.KEYDOWN:
+
+                if event.key == pygame.K_r:
+                    self.resetCoins()
+                    player.rect.x = 50
+                    player.rect.y = HEIGHT / 2
+                    player.changeX = player.rect.x
+                    player.changeY = player.rect.y
+                    player.resetPlayerPosition((50), HEIGHT / 2)
+
+
+                global levelPaused
+
+                if event.key == pygame.K_ESCAPE:
+                    levelPaused = current_level
+                    current_level_no = 7
+                    current_level = level_list[current_level_no]
 
     def draw(self, screen):
         """ Draw everything on this level. """
@@ -424,7 +474,6 @@ class Level(object):
             buttonz = Button(button[0], button[1], button[2], button[3])
             self.buttons_list.append(buttonz)
             self.buttonsList.add(buttonz)
-
 
     def setWalls(self, walls):
         for wall in walls:
@@ -450,8 +499,14 @@ class Level(object):
             self.enemy_list.add(enemiez)
 
     def drawText(self, x, y, text, color):
-        txt = font.render( str( text ), True, color)
-        screen.blit( txt, (x, y))
+        txt = font.render(str(text), True, color)
+        screen.blit(txt, (x, y))
+
+    def waitToMenu(self):
+        pygame.time.wait(500)
+
+    def resetCoins(self):
+        self.coin_list.draw(screen)
 
 # Menu Class
 class Level_Menu(Level):
@@ -461,18 +516,19 @@ class Level_Menu(Level):
         # Call the parent constructor
         Level.__init__(self, player)
 
-        self.color = WHITE
-
         walls = [[20, 600, 0, 0], [1000, 20, 0, 0], [1000, 20, 0, 580], [20, 600, 980, 0]]
 
         self.type = "menu"
+        self.isActive = False
 
-        self.buttons = [{"Name" : 'PLAY GAME',
-                        "State" : 0},
-                        {"Name" : 'HELP',
-                        "State" : 0},
-                        {"Name" : 'EXIT',
-                         "State" : 0}]
+        self.texts_list = [["Stick and GO", [200, 300]]]
+
+        self.buttons = [{"Name": 'PLAY GAME',
+                         "State": 0},
+                        {"Name": 'HELP',
+                         "State": 0},
+                        {"Name": 'EXIT',
+                         "State": 0}]
 
         menus = [[120, 20, 200, 360], [120, 20, 200, 398], [120, 20, 200, 435]]
 
@@ -484,6 +540,10 @@ class Level_Menu(Level):
         xx = WIDTH // 5
         yy = 360
 
+        for texts in self.texts_list:
+            texto = font.render(texts[0], True, BLACK)
+            screen.blit(texto, texts[1])
+
         for i in range(len(self.buttons)):
             color = BLACK if (self.buttons[i]["State"] == 0) else RED
             self.drawText(xx, yy + (i * 38), self.buttons[i]["Name"], color)
@@ -493,17 +553,19 @@ class Level_Menu(Level):
         buttonThree = self.buttons_list[2]
 
         # When you let go of the left mouse button in the area of a button, the button does something.
-        if event.type == pygame.MOUSEBUTTONUP:
+        if event.type == pygame.MOUSEBUTTONUP and self.isActive:
             if event.button == 1:
                 global current_level_no
                 global current_level
                 if (buttonOne.rect.left < event.pos[0] < buttonOne.rect.right) and (
                         buttonOne.rect.top < event.pos[1] < buttonOne.rect.bottom):
-                    current_level_no = 2  # World Map
+                    current_level_no = 3  # World Map
                     current_level = level_list[current_level_no]
                     player.level = level_list[current_level_no]
+                    player.level_no = current_level_no
+                    print(22)
                 if (buttonTwo.rect.left < event.pos[0] < buttonTwo.rect.right) and (
-                        buttonTwo.rect.top < event.pos[1] < buttonTwo.rect.bottom):
+                        buttonTwo.rect.top < event.pos[1] < buttonTwo.rect.bottom) and current_level_no != 1:
                     current_level_no = 1  # Tutorial Level
                     current_level = level_list[current_level_no]
                 if (buttonThree.rect.left < event.pos[0] < buttonThree.rect.right) and (
@@ -512,7 +574,7 @@ class Level_Menu(Level):
 
         # When you mouse-over a button, the text turns green.
 
-        if event.type == pygame.MOUSEMOTION:
+        if event.type == pygame.MOUSEMOTION and self.isActive :
             if (buttonOne.rect.left < event.pos[0] < buttonOne.rect.right) and \
                     (buttonOne.rect.top < event.pos[1] < buttonOne.rect.bottom):
                 self.buttons[0]["State"] = 1
@@ -529,23 +591,189 @@ class Level_Menu(Level):
             else:
                 self.buttons[2]["State"] = 0
 
-#Tutorial Class
-class Level_Tutorial(Level):
-
+class Level_GameOver(Level):
     def __init__(self, player):
 
         # Call the parent constructor
         Level.__init__(self, player)
 
-        self.color = WHITE
+        walls = [[20, 600, 0, 0], [1000, 20, 0, 0], [1000, 20, 0, 580], [20, 600, 980, 0]]
+
+        self.type = "menu"
+        self.isActive = False
+        self.buttons = [{"Name": 'PLAY AGAIN',
+                         "State": 0},
+                        {"Name": 'MENU',
+                         "State": 0}]
+
+        menus = [[120, 20, 200, 360], [120, 20, 200, 398]]
+
+        self.setButtons(menus)
+
+        self.setWalls(walls)
+
+    def update(self):
+        xx = WIDTH // 5
+        yy = 360
+
+        for i in range(len(self.buttons)):
+            color = BLACK if (self.buttons[i]["State"] == 0) else RED
+            self.drawText(xx, yy + (i * 38), self.buttons[i]["Name"], color)
+
+        buttonOne = self.buttons_list[0]
+        buttonTwo = self.buttons_list[1]
+
+        # When you let go of the left mouse button in the area of a button, the button does something.
+        if event.type == pygame.MOUSEBUTTONUP and self.isActive:
+            if event.button == 1:
+                global current_level_no
+                global current_level
+                if (buttonOne.rect.left < event.pos[0] < buttonOne.rect.right) and (
+                        buttonOne.rect.top < event.pos[1] < buttonOne.rect.bottom):
+                    current_level_no = player.level_no  # World Map
+                    current_level = level_list[current_level_no]
+                    player.level = level_list[current_level_no]
+                if (buttonTwo.rect.left < event.pos[0] < buttonTwo.rect.right) and (
+                        buttonTwo.rect.top < event.pos[1] < buttonTwo.rect.bottom):
+                    current_level = level_list[0] # Exits the game
+                    current_level_no = 0
+                    self.waitToMenu()
+        # When you mouse-over a button, the text turns green.
+
+        if event.type == pygame.MOUSEMOTION and self.isActive:
+            if (buttonOne.rect.left < event.pos[0] < buttonOne.rect.right) and \
+                    (buttonOne.rect.top < event.pos[1] < buttonOne.rect.bottom):
+                self.buttons[0]["State"] = 1
+            else:
+                self.buttons[0]["State"] = 0
+            if (buttonTwo.rect.left < event.pos[0] < buttonTwo.rect.right) and \
+                    (buttonTwo.rect.top < event.pos[1] < buttonTwo.rect.bottom):
+                self.buttons[1]["State"] = 1
+            else:
+                self.buttons[1]["State"] = 0
+
+class Level_pause(Level):
+    def __init__(self, player):
+
+        # Call the parent constructor
+        Level.__init__(self, player)
+
+        walls = [[20, 600, 0, 0], [1000, 20, 0, 0], [1000, 20, 0, 580], [20, 600, 980, 0]]
+
+        self.type = "menu"
+        self.isActive = False
+        self.buttons = [{"Name": 'CONTINUE',
+                         "State": 0},
+                        {"Name": 'MENU',
+                         "State": 0}]
+
+        menus = [[120, 20, 200, 360], [120, 20, 200, 398]]
+
+        self.setButtons(menus)
+
+        self.setWalls(walls)
+
+    def update(self):
+        xx = WIDTH // 5
+        yy = 360
+
+        for i in range(len(self.buttons)):
+            color = BLACK if (self.buttons[i]["State"] == 0) else RED
+            self.drawText(xx, yy + (i * 38), self.buttons[i]["Name"], color)
+
+        buttonOne = self.buttons_list[0]
+        buttonTwo = self.buttons_list[1]
+
+        # When you let go of the left mouse button in the area of a button, the button does something.
+        if event.type == pygame.MOUSEBUTTONUP and self.isActive:
+            if event.button == 1:
+                global current_level_no
+                global current_level
+                global levelPaused
+                if (buttonOne.rect.left < event.pos[0] < buttonOne.rect.right) and (
+                        buttonOne.rect.top < event.pos[1] < buttonOne.rect.bottom):
+                    current_level = levelPaused
+                if (buttonTwo.rect.left < event.pos[0] < buttonTwo.rect.right) and (
+                        buttonTwo.rect.top < event.pos[1] < buttonTwo.rect.bottom):
+                    current_level = level_list[0] # Exits the game
+                    current_level_no = 0
+                    self.waitToMenu()
+        # When you mouse-over a button, the text turns green.
+
+        if event.type == pygame.MOUSEMOTION and self.isActive:
+            if (buttonOne.rect.left < event.pos[0] < buttonOne.rect.right) and \
+                    (buttonOne.rect.top < event.pos[1] < buttonOne.rect.bottom):
+                self.buttons[0]["State"] = 1
+            else:
+                self.buttons[0]["State"] = 0
+            if (buttonTwo.rect.left < event.pos[0] < buttonTwo.rect.right) and \
+                    (buttonTwo.rect.top < event.pos[1] < buttonTwo.rect.bottom):
+                self.buttons[1]["State"] = 1
+            else:
+                self.buttons[1]["State"] = 0
+
+class Level_Win(Level):
+    def __init__(self, player):
+        # Call the parent constructor
+        Level.__init__(self, player)
 
         walls = [
-                [20, 600, 0, 0], 
-                [1000, 20, 0, 0], 
-                [1000, 20, 0, 580], 
-                [20, 600, 980, 0], 
-                [50, 100, 470, 240]
-                ]
+            [20, 600, 0, 0],
+            [1000, 20, 0, 0],
+            [1000, 20, 0, 580],
+            [20, 600, 980, 0],
+            [50, 100, 470, 240]
+        ]
+
+        coins = [[YELLOW, 250, 200]]
+
+        enemies = [[50, 50, 50, 490, 500, 490, GREEN]]
+
+        self.first = 0
+        self.second = 0
+        self.secondText = ""
+
+        portals = [[50, 50, 650, 350, PURPLE]]
+        self.portals = portals
+        self.type = "menu"
+
+    def update(self):
+        self.texts_list = [["YOU WIN", [445, 200]],
+                           ["{0} / 50000".format(self.first), [420, 250]],
+                           ["{0}".format(self.secondText), [422, 300]]]
+
+        for texts in self.texts_list:
+            texto = font.render(texts[0], True, BLACK)
+            screen.blit(texto, texts[1])
+
+
+        if self.first >= 50000 :
+            self.first = 50000
+            self.second = pygame.time.get_ticks()
+            self.secondText = "congratulations"
+            if self.second >= 20000:
+                self.second = 20000
+                self.theEnd()
+        else :
+            self.first = pygame.time.get_ticks()
+
+    def theEnd(self):
+        pygame.event.post(pygame.event.Event(QUIT))
+
+# Tutorial Class
+class Level_Tutorial(Level):
+
+    def __init__(self, player):
+        # Call the parent constructor
+        Level.__init__(self, player)
+
+        walls = [
+            [20, 600, 0, 0],
+            [1000, 20, 0, 0],
+            [1000, 20, 0, 580],
+            [20, 600, 980, 0],
+            [50, 100, 470, 240]
+        ]
 
         coins = [[YELLOW, 250, 200]]
 
@@ -581,7 +809,7 @@ class Level_Tutorial(Level):
 
         self.setEnemies(enemies)
 
-#Gameplay Levels
+# Gameplay Levels
 class Level_World_Map(Level):
     """ Definition for level 1. """
 
@@ -592,23 +820,21 @@ class Level_World_Map(Level):
         Level.__init__(self, player)
         # self.level_limit = -1500
 
-        self.color = WHITE
-
         walls = [
-                [40, 600, 0, 0], 
-                [1000, 30, 0, 0], 
-                [1000, 20, 0, 580], 
-                [20, 600, 980, 0], 
-                [50, 50, 470, 275]]
+            [40, 600, 0, 0],
+            [1000, 30, 0, 0],
+            [1000, 20, 0, 580],
+            [20, 600, 980, 0],
+            [50, 50, 470, 275]]
 
         # largura, altura, posicao a direita, posicao cima/baixo (quanto menor mais acima)
-        
+
         self.portals = []
         portals = [
-                  [50, 50, 470, 120, BLUE], 
-                  [50, 50, 270, 350, PINK], 
-                  [50, 50, 650, 350, YELLOW]
-                  ]
+            [50, 50, 470, 120, BLUE],
+            [50, 50, 270, 350, PINK],
+            [50, 50, 650, 350, YELLOW]
+        ]
 
         self.type = "normalLevel"
         self.portals = portals
@@ -630,30 +856,28 @@ class Level_01(Level):
 
         # self.level_limit = -1500
 
-        self.color = BLUE
-
         walls = [
-                [40, 600, 0, 0], # paredes de contencao
-                [1000, 30, 0, 0], # paredes de contencao
-                [1000, 20, 0, 590], # paredes de contencao
-                [20, 600, 980, 0], # paredes de contencao
-                [70, 50, 150, 400],
-                [50, 200, 700, 400],
-                [50, 200, 700, 10]
-                ]
+            [40, 600, 0, 0],  # paredes de contencao
+            [1000, 30, 0, 0],  # paredes de contencao
+            [1000, 20, 0, 590],  # paredes de contencao
+            [20, 600, 980, 0],  # paredes de contencao
+            [70, 50, 150, 400],
+            [50, 200, 700, 400],
+            [50, 200, 700, 10]
+        ]
 
         portals = [[50, 50, 900, 125, PURPLE]]
 
         enemies = [
-                  [50, 50, 260, 260, 260, 500, BROWN], 
-                  [50, 50, 400, 400, 400, 500, BROWN]
-                  ]
+            [50, 50, 500, 500, 500, 600, BROWN],
+            [50, 50, 400, 400, 400, 500, BROWN]
+        ]
 
         coins = [
-                 [YELLOW, 175, 350], 
-                 [YELLOW, 650, 75], 
-                 [YELLOW, 450, 550]
-                 ]
+            [YELLOW, 175, 350],
+            [YELLOW, 650, 75],
+            [YELLOW, 450, 550]
+        ]
 
         self.player.add(player)
         self.powerBar.add(powerBar)
@@ -677,30 +901,28 @@ class Level_02(Level):
         # Call the parent constructor
         Level.__init__(self, player)
 
-        self.color = PINK
-
         # self.level_limit = -1500
 
         walls = [
-                [40, 600, 0, 0], # paredes de contencao
-                [1000, 30, 0, 0], # paredes de contencao
-                [1000, 20, 0, 590], # paredes de contencao
-                [20, 600, 980, 0], # paredes de contencao
-                [50, 200, 650, 200]
-                ]
+            [40, 600, 0, 0],  # paredes de contencao
+            [1000, 30, 0, 0],  # paredes de contencao
+            [1000, 20, 0, 590],  # paredes de contencao
+            [20, 600, 980, 0],  # paredes de contencao
+            [50, 200, 650, 200]
+        ]
 
         portals = [[50, 50, 400, 225, PURPLE]]
 
         enemies = [
-                  [50, 50, 150, 100, 150, 350, BLUE], 
-                  [50, 50, 350, 350, 500, 500, BLUE]
-                  ]
+            [50, 50, 150, 100, 150, 350, BLUE],
+            [50, 50, 350, 350, 500, 500, BLUE]
+        ]
 
         coins = [
-                 [GREEN, 300, 20], 
-                 [GREEN, 600, 275], 
-                 [GREEN, 450, 550]
-                 ]
+            [GREEN, 300, 20],
+            [GREEN, 600, 275],
+            [GREEN, 450, 550]
+        ]
 
         self.player.add(player)
         self.powerBar.add(powerBar)
@@ -715,7 +937,6 @@ class Level_02(Level):
 
         self.type = "normalLevel"
 
-
 class Level_03(Level):
     """ Definition for level 1. """
 
@@ -727,27 +948,25 @@ class Level_03(Level):
 
         # self.level_limit = -1500
 
-        self.color = YELLOW
-
         walls = [
-                [40, 600, 0, 0], # paredes de contencao
-                [1000, 30, 0, 0], # paredes de contencao
-                [1000, 20, 0, 590], # paredes de contencao
-                [20, 600, 980, 0], # paredes de contencao
-                ]
+            [40, 600, 0, 0],  # paredes de contencao
+            [1000, 30, 0, 0],  # paredes de contencao
+            [1000, 20, 0, 590],  # paredes de contencao
+            [20, 600, 980, 0],  # paredes de contencao
+        ]
 
         portals = [[50, 50, 850, 450, PURPLE]]
 
         enemies = [
-                  [50, 50, 150, 100, 150, 350, RED], 
-                  [50, 50, 100, 400, 400, 100, RED]
-                  ]
+            [50, 50, 150, 100, 150, 350, RED],
+            [50, 50, 100, 400, 400, 100, RED]
+        ]
 
         coins = [
-                 [BLUE, 150, 400], 
-                 [BLUE, 475, 200], 
-                 [BLUE, 800, 400]
-                 ]
+            [BLUE, 150, 400],
+            [BLUE, 475, 200],
+            [BLUE, 800, 400]
+        ]
 
         self.player.add(player)
         self.powerBar.add(powerBar)
@@ -859,13 +1078,23 @@ powerBar = PowerBar()
 
 allSprites = pygame.sprite.Group()
 
+menu = Level_Menu(player)
+gameOver =  Level_GameOver(player)
+pause = Level_pause(player)
+win = Level_Win(player)
+
+levelPaused = None
+
 level_list = []
-level_list.append(Level_Menu(player))
+level_list.append(menu)
 level_list.append(Level_Tutorial(player))
+level_list.append(gameOver)
 level_list.append(Level_World_Map(player))
 level_list.append(Level_01(player))
 level_list.append(Level_02(player))
 level_list.append(Level_03(player))
+level_list.append(pause)
+level_list.append(win)
 
 current_level_no = 0
 current_level = level_list[current_level_no]
@@ -888,12 +1117,28 @@ while running:
         # check for closing window
         if event.type == pygame.QUIT:
             running = False
-    
-    screen.fill(player.level.color)
 
+    screen.fill(WHITE)
     # update
     current_level.draw(screen)
     current_level.update()
+    if current_level_no == 0:
+        menu.isActive = True
+    else:
+        menu.isActive = False
+    if current_level_no == 2:
+        gameOver.isActive = True
+    else:
+        gameOver.isActive = False
+    if current_level_no == 7:
+        pause.isActive = True
+    else:
+        pause.isActive = False
+
+    if player.score >= 5 :
+        current_level = win
+
+    print(current_level_no)
 
     if player.portal_stage == 'BLUE' and player.portal_state is True:
         player.rect.x = 50
@@ -902,9 +1147,10 @@ while running:
         player.changeY = player.rect.y
         player.resetPlayerPosition((50), HEIGHT / 2)
 
-        current_level_no = 3
+        current_level_no = 4
         current_level = level_list[current_level_no]
         player.level = current_level
+        player.level_no = current_level_no
 
         player.portal_stage = ''
         player.portal_state = False
@@ -916,23 +1162,25 @@ while running:
         player.changeY = player.rect.y
         player.resetPlayerPosition((50), HEIGHT / 2)
 
-        current_level_no = 4
+        current_level_no = 5
         current_level = level_list[current_level_no]
         player.level = current_level
-
+        player.level_no = current_level_no
+        print(player.level_no)
         player.portal_stage = ''
         player.portal_state = False
 
     if player.portal_stage == 'YELLOW' and player.portal_state is True:
-        player.rect.x = 50
+        player.rect.x = 7
         player.rect.y = HEIGHT / 2
         player.changeX = player.rect.x
         player.changeY = player.rect.y
         player.resetPlayerPosition((50), HEIGHT / 2)
 
-        current_level_no = 5
+        current_level_no = 6
         current_level = level_list[current_level_no]
         player.level = current_level
+        player.level_no = current_level_no
 
         player.portal_stage = ''
         player.portal_state = False
@@ -944,18 +1192,16 @@ while running:
         player.changeY = player.rect.y
         player.resetPlayerPosition((50), HEIGHT / 2)
 
-        current_level_no = 2
+        current_level_no = 3
         current_level = level_list[current_level_no]
         player.level = current_level
+        player.level_no = current_level_no
 
         player.portal_stage = ''
         player.portal_state = False
 
-    if current_level_no == 1:
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_ESCAPE:
-                    current_level_no = 0
-                    current_level = level_list[current_level_no]
+
+
 
     # Draw / render
 
