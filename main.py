@@ -196,6 +196,8 @@ class Player(pygame.sprite.Sprite):
                         self.portal_stage = 'PINK'
                     if portal.color == PURPLE:
                         self.portal_stage = 'PURPLE'
+                    if portal.color == YELLOW:
+                        self.portal_stage = 'YELLOW'
 
 
                 elif self.rect.midtop[1] > portal.rect.midtop[1] and self.rect.midright[0] < portal.rect.midright[0] and \
@@ -207,7 +209,8 @@ class Player(pygame.sprite.Sprite):
                         self.portal_stage = 'PINK'
                     if portal.color == PURPLE:
                         self.portal_stage = 'PURPLE'
-
+                    if portal.color == YELLOW:
+                        self.portal_stage = 'YELLOW'
 
                 elif self.rect.midtop[1] > portal.rect.midtop[1] and self.rect.midright[0] > portal.rect.midright[0] and \
                         self.rect.midleft[0] > portal.rect.midleft[0]:
@@ -218,6 +221,8 @@ class Player(pygame.sprite.Sprite):
                         self.portal_stage = 'PINK'
                     if portal.color == PURPLE:
                         self.portal_stage = 'PURPLE'
+                    if portal.color == YELLOW:
+                        self.portal_stage = 'YELLOW'
 
                 elif self.rect.midtop[1] > portal.rect.midtop[1] and self.rect.midright[0] < portal.rect.midright[0] and \
                         self.rect.midleft[0] > portal.rect.midleft[0]:
@@ -228,6 +233,8 @@ class Player(pygame.sprite.Sprite):
                         self.portal_stage = 'PINK'
                     if portal.color == PURPLE:
                         self.portal_stage = 'PURPLE'
+                    if portal.color == YELLOW:
+                        self.portal_stage = 'YELLOW'
 
                 self.Xo = self.changeX
                 self.Yo = self.changeY
@@ -308,14 +315,15 @@ class Coin(pygame.sprite.Sprite):
 
     level = None
 
-    def __init__(self, width, height):
+    def __init__(self, width, height, color):
         # Call the parent class (Sprite) constructor
         super().__init__()
 
         # Create an image of the block, and fill it with a color.
         # This could also be an image loaded from the disk.
         self.image = pygame.Surface([width, height])
-        self.image.fill(YELLOW)
+        self.color = color
+        self.image.fill(self.color)
 
         # Fetch the rectangle object that has the dimensions of the image
         # image.
@@ -399,10 +407,6 @@ class Level(object):
                 chancez.player = self.player
                 self.chance_list.add(chancez)
 
-
-
-
-
     def draw(self, screen):
         """ Draw everything on this level. """
         # Draw all the sprite lists that we have
@@ -434,14 +438,14 @@ class Level(object):
 
     def setCoins(self, coins):
         for coin in coins:
-            moeda = Coin(32, 32)
-            moeda.rect.x = coin[0]
-            moeda.rect.y = coin[1]
+            moeda = Coin(32, 32, coin[0])
+            moeda.rect.x = coin[1]
+            moeda.rect.y = coin[2]
             self.coin_list.add(moeda)
 
     def setEnemies(self, enemies):
         for enemy in enemies:
-            enemiez = Enemy(enemy[0], enemy[1], enemy[2], enemy[3], enemy[4], enemy[5])
+            enemiez = Enemy(enemy[0], enemy[1], enemy[2], enemy[3], enemy[4], enemy[5], enemy[6])
             enemiez.player = self.player
             self.enemy_list.add(enemiez)
 
@@ -531,20 +535,31 @@ class Level_Tutorial(Level):
         # Call the parent constructor
         Level.__init__(self, player)
 
-        walls = [[20, 600, 0, 0], [1000, 20, 0, 0], [1000, 20, 0, 580], [20, 600, 980, 0], [50, 100, 470, 240]]
+        walls = [
+                [20, 600, 0, 0], 
+                [1000, 20, 0, 0], 
+                [1000, 20, 0, 580], 
+                [20, 600, 980, 0], 
+                [50, 100, 470, 240]
+                ]
 
-        coins = [[250, 200]]
+        coins = [[YELLOW, 250, 200]]
 
-        enemies = [[50, 50, 50, 490, 500, 490]]
+        enemies = [[50, 50, 50, 490, 500, 490, GREEN]]
 
         portals = [[50, 50, 650, 350, PURPLE]]
         self.portals = portals
         self.type = "menu"
-        self.texts_list = [["Hi, Welcome to Stick and Go!", [350, 100]],
-                           ["the golden squares are coins they improve you score", [80, 175]],
-                           ["and green squares are your enemies take care", [80, 500]],
-                           ["the others colorful squares are portals to transport you", [350, 380]],
-                           ["Esc to return!!!", [620, 500]]
+        self.texts_list = [["Hi, Welcome to Stick and Go!", [350, 40]],
+                           ["your main goal is to collect all coins", [310, 70]],
+                           ["but you'll soon realize that it's hard as heck", [280, 100]],
+                           ["these little squares are coins, they improve your score", [80, 175]],
+                           ["the black edges are walls", [200, 275]],
+                           ["you should stick to them (literally)", [550, 275]],
+                           ["and moving squares are your enemies, take care as they'll reposition you", [80, 500]],
+                           ["they'll also take your HP away, but you'll probably not care", [80, 550]],
+                           ["the others colorful squares are portals to transport you between stages", [250, 400]],
+                           ["Press [Esc] to return", [750, 550]]
                            ]
 
         self.buttons = [{"Name": 'COME BACK TO MENU!!! ',
@@ -573,26 +588,30 @@ class Level_World_Map(Level):
         Level.__init__(self, player)
         # self.level_limit = -1500
 
-        walls = [[40, 600, 0, 0], [1000, 30, 0, 0], [1000, 20, 0, 580], [20, 600, 980, 0], [50, 100, 470, 240]]
+        walls = [
+                [40, 600, 0, 0], 
+                [1000, 30, 0, 0], 
+                [1000, 20, 0, 580], 
+                [20, 600, 980, 0], 
+                [50, 50, 470, 275]]
 
         # largura, altura, posicao a direita, posicao cima/baixo (quanto menor mais acima)
+        
         self.portals = []
-        portals = [50, 50, 270, 150, BLUE], [50, 50, 270, 350, PINK], [50, 50, 650, 150, YELLOW], [50, 50, 650, 350,
-                                                                                                   RED]
+        portals = [
+                  [50, 50, 470, 120, BLUE], 
+                  [50, 50, 270, 350, PINK], 
+                  [50, 50, 650, 350, YELLOW]
+                  ]
+
         self.type = "normalLevel"
         self.portals = portals
         self.player.add(player)
         self.powerBar.add(powerBar)
 
-        for wall in walls:
-            wallz = Wall(wall[0], wall[1], wall[2], wall[3])
-            wallz.player = self.player
-            self.wall_list.add(wallz)
+        self.setWalls(walls)
 
-        for portal in portals:
-            portalz = Portal(portal[0], portal[1], portal[2], portal[3], portal[4])
-            portalz.player = self.player
-            self.portal_list.add(portalz)
+        self.setPortals(portals)
 
 class Level_01(Level):
     """ Definition for level 1. """
@@ -605,17 +624,28 @@ class Level_01(Level):
 
         # self.level_limit = -1500
 
-        walls = [[40, 600, 0, 0], [1000, 30, 0, 0], [1000, 20, 0, 580], [20, 600, 980, 0], [50, 100, 470, 240]]
+        walls = [
+                [40, 600, 0, 0], # paredes de contencao
+                [1000, 30, 0, 0], # paredes de contencao
+                [1000, 20, 0, 590], # paredes de contencao
+                [20, 600, 980, 0], # paredes de contencao
+                [70, 50, 150, 400],
+                [50, 200, 700, 400],
+                [50, 200, 700, 10]
+                ]
 
-        portals = [[50, 50, 700, 500, PURPLE]]
+        portals = [[50, 50, 900, 125, PURPLE]]
 
-        enemies = [[50, 50, 500, 500, 500, 600], [50, 50, 400, 400, 400, 500]]
+        enemies = [
+                  [50, 50, 500, 500, 500, 600, BROWN], 
+                  [50, 50, 400, 400, 400, 500, BROWN]
+                  ]
 
-        coins = [[250, 200], [350, 100], [450, 300]]
-
-        self.type = "normalLevel"
-
-
+        coins = [
+                 [YELLOW, 175, 350], 
+                 [YELLOW, 650, 75], 
+                 [YELLOW, 450, 550]
+                 ]
 
         self.player.add(player)
         self.powerBar.add(powerBar)
@@ -628,9 +658,7 @@ class Level_01(Level):
 
         self.setEnemies(enemies)
 
-    def popChances(self):
-
-        self.chances.pop(2)
+        self.type = "normalLevel"
 
 class Level_02(Level):
     """ Definition for level 1. """
@@ -643,15 +671,27 @@ class Level_02(Level):
 
         # self.level_limit = -1500
 
-        walls = [[40, 600, 0, 0], [1000, 30, 0, 0], [1000, 20, 0, 580], [20, 600, 980, 0], [50, 100, 470, 240]]
+        walls = [
+                [40, 600, 0, 0], # paredes de contencao
+                [1000, 30, 0, 0], # paredes de contencao
+                [1000, 20, 0, 590], # paredes de contencao
+                [20, 600, 980, 0], # paredes de contencao
+                [50, 200, 650, 200]
+                ]
 
-        portals = [[50, 50, 700, 200, PURPLE]]
+        portals = [[50, 50, 400, 225, PURPLE]]
 
-        enemies = [[50, 50, 500, 500, 500, 600], [50, 50, 400, 400, 400, 500]]
+        enemies = [
+                  [50, 50, 150, 100, 150, 350, BLUE], 
+                  [50, 50, 350, 350, 500, 500, BLUE]
+                  ]
 
-        coins = [[250, 200], [350, 100], [450, 300]]
+        coins = [
+                 [GREEN, 300, 20], 
+                 [GREEN, 600, 275], 
+                 [GREEN, 450, 550]
+                 ]
 
-        self.type = "normalLevel"
         self.player.add(player)
         self.powerBar.add(powerBar)
 
@@ -662,6 +702,53 @@ class Level_02(Level):
         self.setCoins(coins)
 
         self.setEnemies(enemies)
+
+        self.type = "normalLevel"
+
+
+class Level_03(Level):
+    """ Definition for level 1. """
+
+    def __init__(self, player):
+        """ Create level 1. """
+
+        # Call the parent constructor
+        Level.__init__(self, player)
+
+        # self.level_limit = -1500
+
+        walls = [
+                [40, 600, 0, 0], # paredes de contencao
+                [1000, 30, 0, 0], # paredes de contencao
+                [1000, 20, 0, 590], # paredes de contencao
+                [20, 600, 980, 0], # paredes de contencao
+                ]
+
+        portals = [[50, 50, 850, 450, PURPLE]]
+
+        enemies = [
+                  [50, 50, 150, 100, 150, 350, RED], 
+                  [50, 50, 100, 400, 400, 100, RED]
+                  ]
+
+        coins = [
+                 [BLUE, 150, 400], 
+                 [BLUE, 475, 200], 
+                 [BLUE, 800, 400]
+                 ]
+
+        self.player.add(player)
+        self.powerBar.add(powerBar)
+
+        self.setWalls(walls)
+
+        self.setPortals(portals)
+
+        self.setCoins(coins)
+
+        self.setEnemies(enemies)
+
+        self.type = "normalLevel"
 
 # Objects Class
 class Wall(pygame.sprite.Sprite):
@@ -693,10 +780,11 @@ class Button(pygame.sprite.Sprite):
         self.rect.y = y
 
 class Enemy(pygame.sprite.Sprite):
-    def __init__(self, width, height, x, y, finalX, finalY):
+    def __init__(self, width, height, x, y, finalX, finalY, color):
         pygame.sprite.Sprite.__init__(self)
         self.image = pygame.Surface([width, height])
-        self.image.fill(GREEN)
+        self.color = color
+        self.image.fill(self.color)
 
         self.rect = self.image.get_rect()
         self.rect.x = x
@@ -765,6 +853,7 @@ level_list.append(Level_Tutorial(player))
 level_list.append(Level_World_Map(player))
 level_list.append(Level_01(player))
 level_list.append(Level_02(player))
+level_list.append(Level_03(player))
 
 current_level_no = 0
 current_level = level_list[current_level_no]
@@ -800,7 +889,7 @@ while running:
         player.changeY = player.rect.y
         player.resetPlayerPosition((50), HEIGHT / 2)
 
-        current_level_no = 1
+        current_level_no = 3
         current_level = level_list[current_level_no]
         player.level = current_level
 
@@ -814,7 +903,21 @@ while running:
         player.changeY = player.rect.y
         player.resetPlayerPosition((50), HEIGHT / 2)
 
-        current_level_no = 2
+        current_level_no = 4
+        current_level = level_list[current_level_no]
+        player.level = current_level
+
+        player.portal_stage = ''
+        player.portal_state = False
+
+    if player.portal_stage == 'YELLOW' and player.portal_state is True:
+        player.rect.x = 50
+        player.rect.y = HEIGHT / 2
+        player.changeX = player.rect.x
+        player.changeY = player.rect.y
+        player.resetPlayerPosition((50), HEIGHT / 2)
+
+        current_level_no = 5
         current_level = level_list[current_level_no]
         player.level = current_level
 
@@ -828,47 +931,18 @@ while running:
         player.changeY = player.rect.y
         player.resetPlayerPosition((50), HEIGHT / 2)
 
-        current_level_no = 1
+        current_level_no = 2
         current_level = level_list[current_level_no]
         player.level = current_level
 
         player.portal_stage = ''
         player.portal_state = False
 
-    # if current_level_no == 0:
-    #     if player.ready is True:
-    #         textos = [["Hi, Welcome to Stick and Go!", [267, 130]],
-    #                   ["Try to put your mouse curso on top of this Coin", [367, 230]],
-    #                   ["{0}".format(powerBar.height), [25, 450]]
-    #                   ]
-    #         for texts in textos:
-    #             texto = font.render(texts[0], True, BLACK)
-    #             screen.blit(texto, texts[1])
-
     if current_level_no == 1:
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
                     current_level_no = 0
                     current_level = level_list[current_level_no]
-
-
-
-    if current_level_no == 2:
-        if player.portal_stage == 'BLUE':
-            texto = font.render("BLUE", True, BLACK)
-            screen.blit(texto, [267, 130])
-        # if player.portal_stage == 'PINK':
-        #     texto = font.render("PINK", True, BLACK)
-        #     screen.blit(texto, [300, 300])
-        # if player.portal_stage == 'YELLOW':
-        #     texto = font.render("PINK", True, BLUE)
-        #     screen.blit(texto, [300, 300])
-        # if player.portal_stage == 'RED':
-        #     texto = font.render("RED", True, YELLOW)
-        #     screen.blit(texto, [300, 300])
-        # if player.portal_stage == '':
-        #     texto = None
-        #     screen.blit(texto, [0, 0])
 
     # Draw / render
 
